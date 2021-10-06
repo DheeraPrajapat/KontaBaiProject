@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "269719404537",
+    "project_id": "kontabai-project",
+    "storage_bucket": "kontabai-project.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:269719404537:android:f962101cfd100572654728",
+        "android_client_info": {
+          "package_name": "com.example.kontabaiproject"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "269719404537-lmdb05ar3ij7a1ol0l0q7fcvf2g5k0fb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDuTqLuGTqMNgGG1PNiUyNmbDfyeCr1pho"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "269719404537-lmdb05ar3ij7a1ol0l0q7fcvf2g5k0fb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
