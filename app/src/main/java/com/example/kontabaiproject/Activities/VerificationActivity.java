@@ -69,7 +69,7 @@ public class VerificationActivity extends AppCompatActivity {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if(task.isSuccessful()){
-                    alertDialog=new AlertDialog.Builder(VerificationActivity.this).create();
+                    alertDialog=new AlertDialog.Builder(VerificationActivity.this,R.style.verification_done).create();
                     View view=getLayoutInflater().inflate(R.layout.confirmation_dialogbox,null,false);
                     alertDialog.setView(view);
                     alertDialog.setCancelable(false);
