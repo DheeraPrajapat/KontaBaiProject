@@ -1,7 +1,12 @@
 package com.example.kontabaiproject.Activities;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
@@ -9,7 +14,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.example.kontabaiproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -27,6 +35,9 @@ public class RegistrationActivity extends AppCompatActivity {
     EditText mobileNumber;
     TextView nextButton;
     FirebaseAuth firebaseAuth;
+    private static final int PERMISSION_CAMERA_CODE =121 ;
+    String[] manifest={Manifest.permission.CAMERA};
+    AlertDialog alertDialog;
     String verificationId;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,5 +88,41 @@ public class RegistrationActivity extends AppCompatActivity {
         mobileNumber = findViewById(R.id.Mobilenumber);
         nextButton = findViewById(R.id.nextButton);
         firebaseAuth = FirebaseAuth.getInstance();
+    }
+
+    private void checkPermission()
+    {
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED){
+            ActivityCompat.requestPermissions(this,manifest, RegistrationActivity.PERMISSION_CAMERA_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(requestCode==PERMISSION_CAMERA_CODE && grantResults[0]==PackageManager.PERMISSION_DENIED){
+            Log.d("alert","yes");
+            alertDialog=new AlertDialog.Builder(this).create();
+            View alertView=getLayoutInflater().inflate(R.layout.settings_alert,null,false);
+            alertDialog.setView(alertView);
+            alertDialog.show();
+            alertDialog.setCancelable(false);
+            TextView textView=alertView.findViewById(R.id.settingsButton);
+            textView.setOnClickListener(v->{
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                Uri uri = Uri.fromParts("package", getPackageName(), null);
+                intent.setData(uri);
+                alertDialog.dismiss();
+                startActivity(intent);
+            });
+        }else{
+            Log.d("alert","no");
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        checkPermission();
     }
 }
