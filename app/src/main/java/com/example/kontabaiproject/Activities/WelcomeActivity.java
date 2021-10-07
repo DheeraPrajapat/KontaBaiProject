@@ -36,7 +36,7 @@ public class WelcomeActivity extends AppCompatActivity {
                 finish();
             },1000);
         }  if(firebaseUser!=null){
-            DatabaseReference databaseReference= FirebaseDatabase.getInstance().getReference().child("Users").child(firebaseUser.getUid());
+            DatabaseReference databaseReference= FirebaseDatabase.getInstance().getReference().child("OnlyUsers").child(firebaseUser.getPhoneNumber());
             databaseReference.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
