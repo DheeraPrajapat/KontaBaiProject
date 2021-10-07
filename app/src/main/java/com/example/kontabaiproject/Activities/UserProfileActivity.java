@@ -2,6 +2,7 @@ package com.example.kontabaiproject.Activities;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -11,6 +12,7 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.EditText;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -24,8 +26,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.kontabaiproject.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
@@ -35,8 +36,11 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.StorageTask;
 import com.google.firebase.storage.UploadTask;
 
+import org.w3c.dom.Text;
+
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -49,32 +53,27 @@ public class UserProfileActivity extends AppCompatActivity {
     Uri imageUri;
     AlertDialog alertDialog;
     private static final int PERMISSION_CAMERA_CODE=121;
-    StorageReference UserProfileRef;
+    StorageTask<UploadTask.TaskSnapshot> uploadTask;
+    StorageReference storageReference;
     DatabaseReference databaseReference;
     ProgressDialog progressDialog;
-    Uri ImageUri;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_profile);
         initViews();
-        imageView.setOnClickListener(v->{
-            setImageView();
-        });
+        imageView.setOnClickListener(v-> setImageView());
         createAsDriver.setOnClickListener(view -> startActivity(new Intent(UserProfileActivity.this,DriverSideActivity.class).addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK
         )));
-        createProfile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String fullName=fullname.getText().toString().trim();
-                String num=phonenumber.getText().toString().trim();
-                if(fullName.equals("")){
-                    fullname.setError("Type your name");
-                }
-                phonenumber.setEnabled(num.equals(""));
-                SaveUserInformation(fullName,num);
+        createProfile.setOnClickListener(view -> {
+            String fullName=fullname.getText().toString().trim();
+            String num=phonenumber.getText().toString().trim();
+            if(fullName.equals("")){
+                fullname.setError("Type your name");
             }
+            phonenumber.setEnabled(num.equals(""));
+            SaveUserInformation(fullName,num);
         });
     }
 
@@ -84,10 +83,10 @@ public class UserProfileActivity extends AppCompatActivity {
         intent1.setType("image/*");
     }
 
-    private void checkPermission(int permissionCameraCode)
+    private void checkPermission()
     {
         if(ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED){
-            ActivityCompat.requestPermissions(this,manifest,permissionCameraCode);
+            ActivityCompat.requestPermissions(this,manifest, UserProfileActivity.PERMISSION_CAMERA_CODE);
         }
     }
 
@@ -111,13 +110,20 @@ public class UserProfileActivity extends AppCompatActivity {
             });
         }else{
             Log.d("alert","no");
+            alertDialog.dismiss();
         }
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode==PERMISSION_CAMERA_CODE && resultCode==RESULT_OK){
-            Bitmap mImageUri = (Bitmap) data.getExtras().get("data");
+        if(requestCode==PERMISSION_CAMERA_CODE && resultCode==RESULT_OK  && data != null && data.getData() != null ){
+            imageUri=data.getData();
+            Bitmap mImageUri = null;
+            try {
+                mImageUri = MediaStore.Images.Media.getBitmap(getContentResolver(),imageUri);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             if(mImageUri==null){
                 Toast.makeText(UserProfileActivity.this, "Please Select the image", Toast.LENGTH_SHORT).show();
             }else {
@@ -144,8 +150,9 @@ public class UserProfileActivity extends AppCompatActivity {
         phonenumber=findViewById(R.id.phoneNumber);
         imageView=findViewById(R.id.profileImage);
         phonenumber.setEnabled(false);
-        UserProfileRef= FirebaseStorage.getInstance().getReference().child("Profile Images").child(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber());
-        databaseReference= FirebaseDatabase.getInstance().getReference().child("OnlyUsers");
+        databaseReference= FirebaseDatabase.getInstance().getReference().child("OnlyUsers").child(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber());
+        storageReference = FirebaseStorage.getInstance().getReference(Objects.requireNonNull(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getPhoneNumber()));
+
     }
 
     private void SelectImage()
@@ -160,8 +167,7 @@ public class UserProfileActivity extends AppCompatActivity {
                 PICK_IMAGE_REQUEST);
     }
     private void setImageView(){
-        checkPermission(PERMISSION_CAMERA_CODE);
-        Intent intent=new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        checkPermission();
         PopupMenu popupMenu=new PopupMenu(UserProfileActivity.this,imageView);
         popupMenu.getMenuInflater().inflate(R.menu.popmenu_imageview,popupMenu.getMenu());
         popupMenu.setOnMenuItemClickListener(menuItem -> {
@@ -179,7 +185,7 @@ public class UserProfileActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        String number=FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber();
+        String number= Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getPhoneNumber();
         phonenumber.setText(number);
     }
 
@@ -187,39 +193,66 @@ public class UserProfileActivity extends AppCompatActivity {
         progressDialog=new ProgressDialog(this);
         progressDialog.setMessage("Please wait few seconds we setup your profile!");
         progressDialog.show();
-        HashMap<String,String> hashMap=new HashMap<>();
-        hashMap.put("name",name);
-        hashMap.put("number",number);
-        hashMap.put("imageurl",imageUri.toString());
-        if(imageUri!=null){
-            UserProfileRef.putFile(imageUri).addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
-                    if(task.isSuccessful()){
-                        databaseReference.child(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber())
-                                .setValue(hashMap).addOnCompleteListener(new OnCompleteListener<Void>() {
-                            @Override
-                            public void onComplete(@NonNull Task<Void> task) {
-                                progressDialog.dismiss();
-                                startActivity(new Intent(UserProfileActivity.this,MainActivity.class)
-                                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK));
-                            }
-                        }).addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                progressDialog.dismiss();
-                                Toast.makeText(UserProfileActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
+
+        if(imageUri!=null)
+        {
+            final StorageReference file=storageReference.child(System.currentTimeMillis()+"."+getFileExtension(imageUri));
+            uploadTask=file.putFile(imageUri);
+            uploadTask.continueWithTask(task -> {
+                if(!task.isSuccessful())
+                {
+                    throw Objects.requireNonNull(task.getException());
                 }
-            }).addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
+                return file.getDownloadUrl();
+            }).addOnCompleteListener(task -> {
+                if(task.isSuccessful()){
+                    Uri downloaduri= task.getResult();
+                    assert downloaduri != null;
+                    String mUri= downloaduri.toString();
+                    HashMap<String,Object> map=new HashMap<>();
+                    map.put("name",name);
+                    map.put("number",number);
+                    map.put("imageurl",mUri);
+
+                    databaseReference.updateChildren(map);
+                    startActivity(new Intent(UserProfileActivity.this,MainActivity.class)
+                            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK));
+                    finish();
+                } else
+                {
+                    Toast.makeText(UserProfileActivity.this,"Failed",Toast.LENGTH_SHORT).show();
                     progressDialog.dismiss();
-                    Toast.makeText(UserProfileActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
+                progressDialog.dismiss();
+            }).addOnFailureListener(e -> {
+                Toast.makeText(UserProfileActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                progressDialog.dismiss();
             });
+        }else {
+            providePhoto();
+            progressDialog.dismiss();
         }
+    }
+
+    private String getFileExtension(Uri uri){
+        ContentResolver contentResolver= UserProfileActivity.this.getContentResolver();
+        MimeTypeMap mimeTypeMap= MimeTypeMap.getSingleton();
+        return mimeTypeMap.getExtensionFromMimeType(contentResolver.getType(uri));
+    }
+
+    private void providePhoto()
+    {
+        AlertDialog alertDialog=new AlertDialog.Builder(this,R.style.verification_done).create();
+        View view=getLayoutInflater().inflate(R.layout.photo_alertdialogbox,null,false);
+        alertDialog.setView(view);
+        alertDialog.show();
+        alertDialog.setCancelable(false);
+        TextView okButton=view.findViewById(R.id.okPhotoButton);
+        okButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                alertDialog.dismiss();
+            }
+        });
     }
 }
