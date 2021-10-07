@@ -49,9 +49,9 @@ public class UserProfileActivity extends AppCompatActivity {
     TextView createProfile,createAsDriver;
     EditText fullname,phonenumber;
     CircleImageView imageView;
-    String[] manifest={Manifest.permission.CAMERA};
+
     Uri imageUri;
-    AlertDialog alertDialog;
+
     private static final int PERMISSION_CAMERA_CODE=121;
     StorageTask<UploadTask.TaskSnapshot> uploadTask;
     StorageReference storageReference;
@@ -83,36 +83,7 @@ public class UserProfileActivity extends AppCompatActivity {
         intent1.setType("image/*");
     }
 
-    private void checkPermission()
-    {
-        if(ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED){
-            ActivityCompat.requestPermissions(this,manifest, UserProfileActivity.PERMISSION_CAMERA_CODE);
-        }
-    }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if(requestCode==PERMISSION_CAMERA_CODE && grantResults[0]==PackageManager.PERMISSION_DENIED){
-            Log.d("alert","yes");
-              alertDialog=new AlertDialog.Builder(this).create();
-            View alertView=getLayoutInflater().inflate(R.layout.settings_alert,null,false);
-            alertDialog.setView(alertView);
-            alertDialog.show();
-            alertDialog.setCancelable(false);
-            TextView textView=alertView.findViewById(R.id.settingsButton);
-            textView.setOnClickListener(v->{
-                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                Uri uri = Uri.fromParts("package", getPackageName(), null);
-                intent.setData(uri);
-                alertDialog.dismiss();
-                startActivity(intent);
-            });
-        }else{
-            Log.d("alert","no");
-            alertDialog.dismiss();
-        }
-    }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -167,7 +138,6 @@ public class UserProfileActivity extends AppCompatActivity {
                 PICK_IMAGE_REQUEST);
     }
     private void setImageView(){
-        checkPermission();
         PopupMenu popupMenu=new PopupMenu(UserProfileActivity.this,imageView);
         popupMenu.getMenuInflater().inflate(R.menu.popmenu_imageview,popupMenu.getMenu());
         popupMenu.setOnMenuItemClickListener(menuItem -> {
@@ -196,6 +166,7 @@ public class UserProfileActivity extends AppCompatActivity {
 
         if(imageUri!=null)
         {
+            DatabaseReference databaseReference1=FirebaseDatabase.getInstance().getReference().child("AllUsers").child(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber());
             final StorageReference file=storageReference.child(System.currentTimeMillis()+"."+getFileExtension(imageUri));
             uploadTask=file.putFile(imageUri);
             uploadTask.continueWithTask(task -> {
@@ -213,8 +184,7 @@ public class UserProfileActivity extends AppCompatActivity {
                     map.put("name",name);
                     map.put("number",number);
                     map.put("imageurl",mUri);
-
-                    databaseReference.updateChildren(map);
+                    databaseReference.child("Saved").setValue("user");
                     startActivity(new Intent(UserProfileActivity.this,MainActivity.class)
                             .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK));
                     finish();

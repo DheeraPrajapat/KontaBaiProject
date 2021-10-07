@@ -1,11 +1,21 @@
 package com.example.kontabaiproject.Activities;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
+import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.kontabaiproject.R;
@@ -23,31 +33,29 @@ public class WelcomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
-    }
-    @Override
-    protected void onStart() {
-        super.onStart();
         Handler handler=new Handler();
         FirebaseUser firebaseUser= FirebaseAuth.getInstance().getCurrentUser();
-        if(firebaseUser==null){
+        if(firebaseUser== null || firebaseUser.getPhoneNumber()==null){
             handler.postDelayed(() -> {
                 startActivity(new Intent(WelcomeActivity.this,RegistrationActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                         | Intent.FLAG_ACTIVITY_CLEAR_TASK));
                 finish();
             },1000);
-        }  if(firebaseUser!=null){
-            DatabaseReference databaseReference= FirebaseDatabase.getInstance().getReference().child("OnlyUsers").child(firebaseUser.getPhoneNumber());
+        }
+        if(firebaseUser!=null){
+            DatabaseReference databaseReference= FirebaseDatabase.getInstance().getReference().child("AllUsers").child(firebaseUser.getPhoneNumber());
             databaseReference.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     if(snapshot.exists()){
                         startActivity(new Intent(WelcomeActivity.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                                 | Intent.FLAG_ACTIVITY_CLEAR_TASK));
-                    }else{
+                        finish();
+                    }else {
                         startActivity(new Intent(WelcomeActivity.this,UserProfileActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                                 | Intent.FLAG_ACTIVITY_CLEAR_TASK));
+                        finish();
                     }
-                    finish();
                 }
                 @Override
                 public void onCancelled(@NonNull DatabaseError error) {
@@ -56,5 +64,9 @@ public class WelcomeActivity extends AppCompatActivity {
             });
         }
 
+    }
+    @Override
+    protected void onStart() {
+        super.onStart();
     }
 }
