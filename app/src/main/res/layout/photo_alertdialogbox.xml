@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="10dp"
-            android:text="Phone provide your photo!"
+            android:text="Please provide your photo!"
             android:textColor="@color/black"
             android:textSize="14dp"
             tools:ignore="HardcodedText,SpUsage" />

@@ -1,3 +1,11 @@
 <resources>
-    <string name="app_name">KontaBai Project</string>
+    <string name="app_name">KONTA BAI</string>
+    <string name="i_need_a_taxi">I Need a Taxi</string>
+    <string name="recent_booking_taxi">Request Status</string>
+    <string name="refresh">Refresh</string>
+    <string name="pickup_location">Pickup Location : </string>
+    <string name="status">Status : </string>
+    <string name="location">Location</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

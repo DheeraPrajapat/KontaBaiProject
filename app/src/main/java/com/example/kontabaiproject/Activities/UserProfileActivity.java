@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.Log;
@@ -38,6 +39,10 @@ import com.google.firebase.storage.UploadTask;
 
 import org.w3c.dom.Text;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Objects;
@@ -49,7 +54,6 @@ public class UserProfileActivity extends AppCompatActivity {
     TextView createProfile,createAsDriver;
     EditText fullname,phonenumber;
     CircleImageView imageView;
-
     Uri imageUri;
 
     private static final int PERMISSION_CAMERA_CODE=121;
@@ -81,24 +85,24 @@ public class UserProfileActivity extends AppCompatActivity {
         Intent intent1 = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         startActivityForResult(intent1, PERMISSION_CAMERA_CODE);
         intent1.setType("image/*");
+//        Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+//        startActivityForResult(cameraIntent, PERMISSION_CAMERA_CODE);
+
     }
 
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode==PERMISSION_CAMERA_CODE && resultCode==RESULT_OK  && data != null && data.getData() != null ){
-            imageUri=data.getData();
-            Bitmap mImageUri = null;
-            try {
-                mImageUri = MediaStore.Images.Media.getBitmap(getContentResolver(),imageUri);
-            } catch (IOException e) {
-                e.printStackTrace();
+        if(requestCode==PERMISSION_CAMERA_CODE && resultCode==RESULT_OK){
+            Uri uri=data.getData();
+            imageUri=uri;
+            if(imageUri!=null){
+                Bitmap bitmap=(Bitmap)data.getExtras().get("data");
+                imageView.setImageBitmap(bitmap);
+            }else{
+                Toast.makeText(UserProfileActivity.this, "Image not selected", Toast.LENGTH_SHORT).show();
             }
-            if(mImageUri==null){
-                Toast.makeText(UserProfileActivity.this, "Please Select the image", Toast.LENGTH_SHORT).show();
-            }else {
-            imageView.setImageBitmap(mImageUri);}
         }
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null){
             imageUri = data.getData();
@@ -166,7 +170,7 @@ public class UserProfileActivity extends AppCompatActivity {
 
         if(imageUri!=null)
         {
-            DatabaseReference databaseReference1=FirebaseDatabase.getInstance().getReference().child("AllUsers").child(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber());
+            //DatabaseReference databaseReference1=FirebaseDatabase.getInstance().getReference().child("AllUsers").child(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber());
             final StorageReference file=storageReference.child(System.currentTimeMillis()+"."+getFileExtension(imageUri));
             uploadTask=file.putFile(imageUri);
             uploadTask.continueWithTask(task -> {

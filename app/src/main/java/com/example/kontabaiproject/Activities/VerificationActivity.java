@@ -12,12 +12,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.kontabaiproject.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthProvider;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class VerificationActivity extends AppCompatActivity {
     TextView verifyButton,backButton;
@@ -40,13 +42,8 @@ public class VerificationActivity extends AppCompatActivity {
                 verifyCode(verification);
             }
         });
-        backButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startActivity(new Intent(VerificationActivity.this,RegistrationActivity.class)
-                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK));
-            }
-        });
+        backButton.setOnClickListener(view -> startActivity(new Intent(VerificationActivity.this,RegistrationActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK)));
     }
 
     private void initViews()
@@ -65,30 +62,43 @@ public class VerificationActivity extends AppCompatActivity {
 
     private void signWithPhoneCredentail(PhoneAuthCredential authCredential)
     {
-        firebaseAuth.signInWithCredential(authCredential).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-            @Override
-            public void onComplete(@NonNull Task<AuthResult> task) {
-                if(task.isSuccessful()){
-                    alertDialog=new AlertDialog.Builder(VerificationActivity.this,R.style.verification_done).create();
-                    View view=getLayoutInflater().inflate(R.layout.confirmation_dialogbox,null,false);
-                    alertDialog.setView(view);
-                    alertDialog.setCancelable(false);
-                    alertDialog.show();
-                    TextView okButton=view.findViewById(R.id.okButton);
-                    okButton.setOnClickListener(new View.OnClickListener() {
+        firebaseAuth.signInWithCredential(authCredential).addOnCompleteListener(task -> {
+            if(task.isSuccessful()){
+                alertDialog=new AlertDialog.Builder(VerificationActivity.this,R.style.verification_done).create();
+                View view=getLayoutInflater().inflate(R.layout.confirmation_dialogbox,null,false);
+                alertDialog.setView(view);
+                alertDialog.setCancelable(false);
+                alertDialog.show();
+                TextView okButton=view.findViewById(R.id.okButton);
+                okButton.setOnClickListener(view1 -> {
+                    DatabaseReference databaseReference= FirebaseDatabase.getInstance().getReference().child("AllUsers").child(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber());
+                    databaseReference.addValueEventListener(new ValueEventListener() {
                         @Override
-                        public void onClick(View view) {
-                            Intent intent=new Intent(VerificationActivity.this,UserProfileActivity.class);
-                            intent.putExtra("number",mobilenumber);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                            startActivity(intent);
-                            alertDialog.dismiss();
-                            finish();
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            if(snapshot.exists()){
+                                Intent intent=new Intent(VerificationActivity.this,MainActivity.class);
+                                intent.putExtra("number",mobilenumber);
+                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                                alertDialog.dismiss();
+                                finish();
+                            }else{
+                                Intent intent=new Intent(VerificationActivity.this,UserProfileActivity.class);
+                                intent.putExtra("number",mobilenumber);
+                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                                alertDialog.dismiss();
+                                finish();
+                            }
+                        }
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            Toast.makeText(VerificationActivity.this,error.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
-                }else{
-                    Toast.makeText(VerificationActivity.this, task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                }
+                });
+            }else{
+                Toast.makeText(VerificationActivity.this, task.getException().getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

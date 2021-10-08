@@ -15,9 +15,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.KontaBaiProject">
         <activity
-            android:name=".Activities.VerificationActivity"
-            android:parentActivityName=".Activities.RegistrationActivity"
+            android:name=".Activities.UserRecentsBooking"
             android:exported="true" />
+        <activity
+            android:name=".Activities.VerificationActivity"
+            android:exported="true"
+            android:parentActivityName=".Activities.RegistrationActivity" />
         <activity
             android:name=".Activities.RegistrationActivity"
             android:exported="true" />

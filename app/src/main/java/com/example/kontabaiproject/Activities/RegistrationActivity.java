@@ -1,6 +1,7 @@
 package com.example.kontabaiproject.Activities;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -73,6 +74,7 @@ public class RegistrationActivity extends AppCompatActivity {
         @Override
         public void onCodeSent(@NonNull String s, @NonNull PhoneAuthProvider.ForceResendingToken forceResendingToken) {
             super.onCodeSent(s, forceResendingToken);
+
             verificationId=s;
             Intent intent=new Intent(RegistrationActivity.this,VerificationActivity.class);
             intent.putExtra("number", mobileNumber.getText().toString());

@@ -58,11 +58,11 @@ public class DriverSideActivity extends AppCompatActivity {
 
         addCarImage.setOnClickListener(view -> {
             whichImage="car";
-            popMenu();
+            popMenu(addCarImage);
         });
         driverImage.setOnClickListener(view -> {
             whichImage="driver";
-            popMenu();
+            popMenu(driverImage);
         });
         submit.setOnClickListener(view -> {
             String fullName=fullname.getText().toString();
@@ -170,8 +170,8 @@ public class DriverSideActivity extends AppCompatActivity {
         databaseReference= FirebaseDatabase.getInstance().getReference().child("Drivers").child(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber());
     }
 
-    private void popMenu() {
-        PopupMenu menu=new PopupMenu(DriverSideActivity.this,addCarImage);
+    private void popMenu(ImageView imageView) {
+        PopupMenu menu=new PopupMenu(DriverSideActivity.this,imageView);
         menu.getMenuInflater().inflate(R.menu.popmenu_imageview,menu.getMenu());
         menu.setOnMenuItemClickListener(menuItem -> {
             if(menuItem.getItemId()==R.id.fromCamera){
@@ -278,7 +278,8 @@ public class DriverSideActivity extends AppCompatActivity {
         alertDialog.setCancelable(false);
         alertDialog.show();
         TextView okButton=view.findViewById(R.id.okButton);
-        okButton.setText("Account activate succesfully!");
+        TextView heading=view.findViewById(R.id.confirmationHeading);
+        heading.setText("Account activate succesfully!");
         okButton.setOnClickListener(view1 -> {
             Intent intent=new Intent(DriverSideActivity.this,MainActivity.class);
             startActivity(intent);
